@@ -3,7 +3,10 @@ package com.github.florent37.materialtextfield;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
-import android.support.v7.widget.CardView;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewCompat;
+import android.support.v4.view.ViewPropertyAnimatorListener;
+import android.support.v4.view.ViewPropertyAnimatorUpdateListener;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,18 +17,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.github.florent37.materialtextfield.R;
 
-import com.nineoldandroids.animation.AnimatorSet;
-import com.nineoldandroids.animation.ObjectAnimator;
-import com.nineoldandroids.animation.ValueAnimator;
-import com.nineoldandroids.view.ViewHelper;
-
-/**
- * Created by florentchampigny on 27/08/15.
- */
 public class MaterialTextField extends FrameLayout {
-
+    protected InputMethodManager inputMethodManager;
 
     protected TextView label;
     protected View card;
@@ -39,165 +33,97 @@ public class MaterialTextField extends FrameLayout {
     protected int ANIMATION_DURATION = -1;
     protected boolean OPEN_KEYBOARD_ON_FOCUS = true;
     protected int labelColor = -1;
-    protected int cardColor = -1;
     protected int imageDrawableId = -1;
     protected int cardCollapsedHeight = -1;
+    protected boolean hasFocus = false;
+    protected int backgroundColor = -1;
 
-    protected void handleAttributes(Context context, AttributeSet attrs) {
-        try {
-            TypedArray styledAttrs = context.obtainStyledAttributes(attrs, R.styleable.MaterialTextField);
-
-            {
-                ANIMATION_DURATION = styledAttrs.getInteger(R.styleable.MaterialTextField_mtf_animationDuration, 400);
-            }
-            {
-                OPEN_KEYBOARD_ON_FOCUS = styledAttrs.getBoolean(R.styleable.MaterialTextField_mtf_openKeyboardOnFocus, false);
-            }
-            {
-                labelColor = styledAttrs.getColor(R.styleable.MaterialTextField_mtf_labelColor, -1);
-            }
-            {
-                cardColor = styledAttrs.getColor(R.styleable.MaterialTextField_mtf_cardColor, -1);
-            }
-            {
-                imageDrawableId = styledAttrs.getResourceId(R.styleable.MaterialTextField_mtf_image, -1);
-            }
-            {
-                cardCollapsedHeight = styledAttrs.getDimensionPixelOffset(R.styleable.MaterialTextField_mtf_cardCollapsedHeight, context.getResources().getDimensionPixelOffset(R.dimen.mtf_cardHeight_initial));
-            }
-
-            cardCollapsedHeight += context.getResources().getDimensionPixelOffset(R.dimen.mtf_cardview_additionnal);
-
-            styledAttrs.recycle();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    protected float reducedScale = 0.2f;
 
     public MaterialTextField(Context context) {
         super(context);
+        init();
     }
 
     public MaterialTextField(Context context, AttributeSet attrs) {
         super(context, attrs);
-        handleAttributes(context,attrs);
+        handleAttributes(context, attrs);
+        init();
     }
 
     public MaterialTextField(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         handleAttributes(context, attrs);
+        init();
     }
 
-
-    protected EditText findEditTextChild() {
-        if (getChildCount() > 0 && getChildAt(0) instanceof EditText) {
-            return (EditText) getChildAt(0);
-        }
-        return null;
-    }
-
-
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-
-        editText = findEditTextChild();
-        if (editText == null)
-            return;
-
-        addView(LayoutInflater.from(getContext()).inflate(R.layout.mtf_layout, this, false));
-
-        editTextLayout = (ViewGroup) findViewById(R.id.mtf_editTextLayout);
-        removeView(editText);
-        editTextLayout.addView(editText);
-
-        label = (TextView) findViewById(R.id.mtf_label);
-        ViewHelper.setPivotX(label, 0);
-        ViewHelper.setPivotY(label, 0);
-
-        if(editText.getHint() != null) {
-            label.setText(editText.getHint());
-            editText.setHint("");
-        }
-
-        card = findViewById(R.id.mtf_card);
-        card.getLayoutParams().height = cardCollapsedHeight;
-        card.requestLayout();
-
-        image = (ImageView) findViewById(R.id.mtf_image);
-        ViewHelper.setAlpha((View) image,0);
-        ViewHelper.setScaleX(image, 0.4f);
-        ViewHelper.setScaleY(image,0.4f);
-
-        ViewHelper.setAlpha(editText,0f);
-        editText.setBackgroundColor(Color.TRANSPARENT);
-
-        labelTopMargin = FrameLayout.LayoutParams.class.cast(label.getLayoutParams()).topMargin;
-
-        customizeFromAttributes();
-
-        this.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggle();
-            }
-        });
-
-    }
-
-    protected void customizeFromAttributes() {
-        if (labelColor != -1) {
-            this.label.setTextColor(labelColor);
-        }
-        if (cardColor != -1) {
-            if(card instanceof CardView)
-                CardView.class.cast(this.card).setCardBackgroundColor(cardColor);
-        }
-        if (imageDrawableId != -1) {
-            this.image.setImageDrawable(getContext().getResources().getDrawable(imageDrawableId));
-        }
+    protected void init() {
+        inputMethodManager = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     }
 
     public void toggle() {
-        if (expanded)
+        if (expanded) {
             reduce();
-        else
+        } else {
             expand();
+        }
     }
 
     public void reduce() {
         if (expanded) {
+            final int heightInitial = getContext().getResources().getDimensionPixelOffset(R.dimen.mtf_cardHeight_final);
 
-            ValueAnimator expand = ValueAnimator.ofInt(card.getHeight(), cardCollapsedHeight);
-            expand.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    Integer value = (Integer) animation.getAnimatedValue();
-                    card.getLayoutParams().height = value.intValue();
-                    card.requestLayout();
-                }
-            });
+            ViewCompat.animate(label)
+                .alpha(1)
+                .scaleX(1)
+                .scaleY(1)
+                .translationY(0)
+                .setDuration(ANIMATION_DURATION);
 
-            AnimatorSet animatorSet = new AnimatorSet();
-            animatorSet.setDuration(ANIMATION_DURATION);
-            animatorSet.playTogether(
-                    ObjectAnimator.ofFloat(label, "alpha", 1),
-                    ObjectAnimator.ofFloat(label, "scaleX", 1),
-                    ObjectAnimator.ofFloat(label, "scaleY", 1),
-                    ObjectAnimator.ofFloat(label, "translationY", 0),
+            ViewCompat.animate(image)
+                .alpha(0)
+                .scaleX(0.4f)
+                .scaleY(0.4f)
+                .setDuration(ANIMATION_DURATION);
 
-                    ObjectAnimator.ofFloat(image, "alpha", 0),
-                    ObjectAnimator.ofFloat(image, "scaleX", 0.4f),
-                    ObjectAnimator.ofFloat(image, "scaleY", 0.4f),
+            ViewCompat.animate(editText)
+                .alpha(1f)
+                .setUpdateListener(new ViewPropertyAnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(View view) {
+                        float value = ViewCompat.getAlpha(view); //percentage
+                        card.getLayoutParams().height = (int) (value * (heightInitial - cardCollapsedHeight) + cardCollapsedHeight);
+                        card.requestLayout();
+                    }
+                })
+                .setDuration(ANIMATION_DURATION)
+                .setListener(new ViewPropertyAnimatorListener() {
+                    @Override
+                    public void onAnimationStart(View view) {
+                        if (expanded) {
+                            editText.setVisibility(View.VISIBLE);
+                        }
+                    }
 
-                    ObjectAnimator.ofFloat(editText, "alpha", 0),
-                    expand
-            );
-            animatorSet.start();
+                    @Override
+                    public void onAnimationEnd(View view) {
+                        if (!expanded) {
+                            editText.setVisibility(View.INVISIBLE);
+                        }
+                    }
 
-            if (OPEN_KEYBOARD_ON_FOCUS)
-                ((InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE)).toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
-            editText.clearFocus();
+                    @Override
+                    public void onAnimationCancel(View view) { }
+                });
+
+            ViewCompat.animate(card)
+                .scaleY(reducedScale)
+                .setDuration(ANIMATION_DURATION);
+
+            if (editText.hasFocus()) {
+                inputMethodManager.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+                editText.clearFocus();
+            }
 
             expanded = false;
         }
@@ -205,41 +131,45 @@ public class MaterialTextField extends FrameLayout {
 
     public void expand() {
         if (!expanded) {
+            ViewCompat.animate(editText)
+                .alpha(1f)
+                .setDuration(ANIMATION_DURATION);
 
-            ValueAnimator expand = ValueAnimator.ofInt(0, getContext().getResources().getDimensionPixelOffset(R.dimen.mtf_cardHeight_final));
-            expand.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    Integer value = (Integer) animation.getAnimatedValue();
-                    card.getLayoutParams().height = value.intValue();
+            ViewCompat.animate(card)
+                .scaleY(1f)
+                .setDuration(ANIMATION_DURATION);
 
-                    card.requestLayout();
-                }
-            });
+            ViewCompat.animate(label)
+                .alpha(0.4f)
+                .scaleX(0.7f)
+                .scaleY(0.7f)
+                .translationY(-labelTopMargin)
+                .setDuration(ANIMATION_DURATION);
 
-            AnimatorSet animatorSet = new AnimatorSet();
-            animatorSet.setDuration(ANIMATION_DURATION);
-            animatorSet.playTogether(
-                    ObjectAnimator.ofFloat(label, "alpha", 0.4f),
-                    ObjectAnimator.ofFloat(label, "scaleX", 0.7f),
-                    ObjectAnimator.ofFloat(label, "scaleY", 0.7f),
-                    ObjectAnimator.ofFloat(label, "translationY", -labelTopMargin),
+            ViewCompat.animate(image)
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(ANIMATION_DURATION);
 
-                    ObjectAnimator.ofFloat(image, "alpha", 1),
-                    ObjectAnimator.ofFloat(image, "scaleX", 1),
-                    ObjectAnimator.ofFloat(image, "scaleY", 1),
+            if (editText != null) {
+                editText.requestFocus();
+            }
 
-                    ObjectAnimator.ofFloat(editText, "alpha", 1),
-                    expand
-            );
-            animatorSet.start();
-
-            editText.requestFocus();
-            if (OPEN_KEYBOARD_ON_FOCUS)
-                ((InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+            if (OPEN_KEYBOARD_ON_FOCUS) {
+                inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+            }
 
             expanded = true;
         }
+    }
+
+    public void setBackgroundColor(int color) {
+        this.backgroundColor = color;
+    }
+
+    public int getBackgroundColor() {
+        return this.backgroundColor;
     }
 
     public View getCard() {
@@ -264,6 +194,130 @@ public class MaterialTextField extends FrameLayout {
 
     public boolean isExpanded() {
         return expanded;
+    }
+
+    public void setHasFocus(boolean hasFocus) {
+        this.hasFocus = hasFocus;
+
+        if (hasFocus) {
+            expand();
+            editText.postDelayed(new Runnable() {
+                public void run() {
+                    editText.requestFocusFromTouch();
+                    inputMethodManager.showSoftInput(editText, 0);
+                }
+            }, 300);
+        } else {
+            reduce();
+        }
+    }
+
+    protected void handleAttributes(Context context, AttributeSet attrs) {
+        try {
+            TypedArray styledAttrs = context.obtainStyledAttributes(attrs, R.styleable.MaterialTextField);
+
+            {
+                ANIMATION_DURATION = styledAttrs.getInteger(R.styleable.MaterialTextField_mtf_animationDuration, 400);
+            }
+            {
+                OPEN_KEYBOARD_ON_FOCUS = styledAttrs.getBoolean(R.styleable.MaterialTextField_mtf_openKeyboardOnFocus, false);
+            }
+            {
+                labelColor = styledAttrs.getColor(R.styleable.MaterialTextField_mtf_labelColor, -1);
+            }
+            {
+                imageDrawableId = styledAttrs.getResourceId(R.styleable.MaterialTextField_mtf_image, -1);
+            }
+            {
+                cardCollapsedHeight = styledAttrs.getDimensionPixelOffset(R.styleable.MaterialTextField_mtf_cardCollapsedHeight, context.getResources().getDimensionPixelOffset(R.dimen.mtf_cardHeight_initial));
+            }
+            {
+                hasFocus = styledAttrs.getBoolean(R.styleable.MaterialTextField_mtf_hasFocus, false);
+            }
+            {
+                backgroundColor = styledAttrs.getColor(R.styleable.MaterialTextField_mtf_backgroundColor, -1);
+            }
+
+            styledAttrs.recycle();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected EditText findEditTextChild() {
+        if (getChildCount() > 0 && getChildAt(0) instanceof EditText) {
+            return (EditText) getChildAt(0);
+        }
+        return null;
+    }
+
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+
+        editText = findEditTextChild();
+        if (editText == null) {
+            return;
+        }
+
+        addView(LayoutInflater.from(getContext()).inflate(R.layout.mtf_layout, this, false));
+
+        editTextLayout = (ViewGroup) findViewById(R.id.mtf_editTextLayout);
+        removeView(editText);
+        editTextLayout.addView(editText);
+
+        label = (TextView) findViewById(R.id.mtf_label);
+        ViewCompat.setPivotX(label, 0);
+        ViewCompat.setPivotY(label, 0);
+
+        if (editText.getHint() != null) {
+            label.setText(editText.getHint());
+            editText.setHint("");
+        }
+
+        card = findViewById(R.id.mtf_card);
+
+        if (backgroundColor != -1) {
+            card.setBackgroundColor(backgroundColor);
+        }
+
+        final int expandedHeight = getContext().getResources().getDimensionPixelOffset(R.dimen.mtf_cardHeight_final);
+        final int reducedHeight = cardCollapsedHeight;
+
+        reducedScale = (float) (reducedHeight * 1.0 / expandedHeight);
+        ViewCompat.setScaleY(card, reducedScale);
+        ViewCompat.setPivotY(card, expandedHeight);
+
+        image = (ImageView) findViewById(R.id.mtf_image);
+        ViewCompat.setAlpha(image, 0);
+        ViewCompat.setScaleX(image, 0.4f);
+        ViewCompat.setScaleY(image, 0.4f);
+
+        ViewCompat.setAlpha(editText, 0f);
+        editText.setBackgroundColor(Color.TRANSPARENT);
+
+        labelTopMargin = FrameLayout.LayoutParams.class.cast(label.getLayoutParams()).topMargin;
+
+        customizeFromAttributes();
+
+        this.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggle();
+            }
+        });
+
+        setHasFocus(hasFocus);
+    }
+
+    protected void customizeFromAttributes() {
+        if (labelColor != -1) {
+            this.label.setTextColor(labelColor);
+        }
+
+        if (imageDrawableId != -1) {
+            this.image.setImageDrawable(ContextCompat.getDrawable(getContext(), imageDrawableId));
+        }
     }
 
 }

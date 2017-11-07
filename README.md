@@ -4,6 +4,14 @@
 
 A different beautiful Floating Edit Text
 
+<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/iqkQGAc2EFNdScAzpwZr1Sdy/florent37/MaterialTextField'>
+  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/iqkQGAc2EFNdScAzpwZr1Sdy/florent37/MaterialTextField.svg' />
+</a>
+
+<a href="https://play.google.com/store/apps/details?id=com.github.florent37.florent.champigny">
+  <img alt="Android app on Google Play" src="https://developer.android.com/images/brand/en_app_rgb_wo_45.png" />
+</a>
+
 [![screen](https://raw.githubusercontent.com/florent37/MaterialTextField/master/screens/2_small.png)](https://www.youtube.com/watch?v=Rax_o3URazU)
 
 [![screen](http://i.giphy.com/l41lVkA0YkaZWNT0I.gif)](https://www.youtube.com/watch?v=Rax_o3URazU)
@@ -12,7 +20,7 @@ A different beautiful Floating Edit Text
   <img alt="Android app on Google Play" src="https://developer.android.com/images/brand/en_app_rgb_wo_45.png" />
 </a>
 
-#Usage
+# Usage
 
 Surround your EditText by a MaterialTextField
 
@@ -20,6 +28,7 @@ Surround your EditText by a MaterialTextField
 <com.github.florent37.materialtextfield.MaterialTextField
         android:layout_width="300dp"
         android:layout_height="wrap_content"
+        app:mtf_labelColor="#666"
         app:mtf_image="@drawable/ic_mail_grey600_24dp"
         >
 
@@ -28,7 +37,6 @@ Surround your EditText by a MaterialTextField
              android:layout_height="wrap_content"
              android:hint="Password"
              android:textColor="#333"
-             android:textColorHint="#666"
              android:textSize="15sp" />
 
 </com.github.florent37.materialtextfield.MaterialTextField>
@@ -41,41 +49,52 @@ Don't forget to precise a drawable to **mtf_image**
 app:mtf_image="@drawable/ic_mail_grey600_24dp"
 ```
 
-#Available attributes
+# Available attributes
 
 ```xml
 <com.github.florent37.materialtextfield.MaterialTextField
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-
+    
     app:mtf_cardCollapsedHeight="4dp"
     app:mtf_image="@drawable/ic_mail_grey600_24dp"
     app:mtf_animationDuration="1000"
-    app:mtf_cardColor="@color/cardview_dark_background"
     app:mtf_labelColor="@android:color/holo_red_dark"
     app:mtf_openKeyboardOnFocus="true">
 ```
 
-#Download
+# Download
+
+<a href='https://ko-fi.com/A160LCC' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://az743702.vo.msecnd.net/cdn/kofi1.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
 In your module [![Download](https://api.bintray.com/packages/florent37/maven/MaterialTextField/images/download.svg)](https://bintray.com/florent37/maven/MaterialTextField/_latestVersion)
 ```groovy
-compile 'com.github.florent37:materialtextfield:1.0.1@aar'
-compile 'com.android.support:cardview-v7:22.2.1'
-compile 'com.nineoldandroids:library:2.4.0'
+compile 'com.github.florent37:materialtextfield:1.0.7'
 ```
 
-#Log
+# Log
+
+1.0.6
+- support focusability
+- added `app:mtf_hasFocus="false"`
+
+1.0.3
+
+- removed some dependencies
+- fix for 4.4
 
 1.0.2
 
 - backport fix for Pre-Lollipop
 - added mtf_cardCollapsedHeight attribute
 
-#Credits
+# Credits
 
 Author: Florent Champigny [http://www.florentchampigny.com/](http://www.florentchampigny.com/)
 
+<a href="https://play.google.com/store/apps/details?id=com.github.florent37.florent.champigny">
+  <img alt="Android app on Google Play" src="https://developer.android.com/images/brand/en_app_rgb_wo_45.png" />
+</a>
 <a href="https://plus.google.com/+florentchampigny">
   <img alt="Follow me on Google+"
        src="https://raw.githubusercontent.com/florent37/DaVinci/master/mobile/src/main/res/drawable-hdpi/gplus.png" />
@@ -84,7 +103,7 @@ Author: Florent Champigny [http://www.florentchampigny.com/](http://www.florentc
   <img alt="Follow me on Twitter"
        src="https://raw.githubusercontent.com/florent37/DaVinci/master/mobile/src/main/res/drawable-hdpi/twitter.png" />
 </a>
-<a href="https://www.linkedin.com/profile/view?id=297860624">
+<a href="https://www.linkedin.com/in/florentchampigny">
   <img alt="Follow me on LinkedIn"
        src="https://raw.githubusercontent.com/florent37/DaVinci/master/mobile/src/main/res/drawable-hdpi/linkedin.png" />
 </a>
